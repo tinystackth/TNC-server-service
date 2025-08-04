@@ -1,0 +1,30 @@
+/*-------SETUP-------*/
+pnpm init
+
+pnpm add express
+
+/*-------Run Server-------*/
+pnpm add -D nodemon
+
+/*-------Middleware-------*/
+pnpm add morgan body-parser cors
+
+/*-------Connect DB-------*/
+pnpm add mongoose
+
+
+pnpm add dotenv
+
+
+เว็บไซต์โหลด NodeJS
+https://nodejs.org/en
+
+ฐานข้อมูล mongodb 
+https://www.mongodb.com/
+
+แล้วก็ Postman  นะครับ
+
+
+mongodb
+tinycare
+Tinycare@123
