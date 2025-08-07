@@ -28,3 +28,8 @@ https://www.mongodb.com/
 mongodb
 tinycare
 Tinycare@123
+
+pnpm run start-all
+
+admin
+admin123
