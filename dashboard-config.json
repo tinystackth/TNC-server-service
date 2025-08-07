@@ -1,0 +1,19 @@
+{
+  "apps": [
+    {
+      "serverURL": "http://localhost:5000/parse",
+      "appId": "myAppId",
+      "masterKey": "myMasterKey",
+      "appName": "TinyCare App",
+      "iconName": "app-icon.png"
+    }
+  ],
+  "users": [
+    {
+      "user": "admin",
+      "pass": "admin123"
+    }
+  ],
+  "useEncryptedPasswords": false,
+  "trustProxy": 1
+}
