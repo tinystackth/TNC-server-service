@@ -33,3 +33,135 @@ pnpm run start-all
 
 admin
 admin123
+
+
+# TinyCare Parse Server
+
+Parse Server backend for TinyCare mobile application with MongoDB Atlas integration.
+
+## 🚀 Features
+
+- Parse Server API
+- Parse Dashboard (Web UI)
+- MongoDB Atlas integration
+- RESTful API endpoints
+- Authentication & Authorization
+- Real-time queries
+
+## 📋 Prerequisites
+
+- Node.js 16+ 
+- pnpm
+- MongoDB Atlas account
+
+## 🛠️ Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd TNC-server-service
+
+# Install dependencies
+pnpm install
+
+# Create environment file
+cp .env.example .env
+```
+
+## 🔧 Environment Variables
+
+Create `.env` file with the following variables:
+
+```env
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+APP_ID=your-app-id
+MASTER_KEY=your-master-key
+SERVER_URL=your-server-url
+DASHBOARD_USER=admin
+DASHBOARD_PASS=your-secure-password
+COOKIE_SECRET=your-random-secret-key
+PORT=5000
+NODE_ENV=production
+```
+
+## 🔐 Generate Secure Passwords
+
+```bash
+# Generate secure passwords for production
+pnpm run generate-passwords
+
+# Check production setup
+pnpm run check-production
+```
+
+## 🏃‍♂️ Running the Application
+
+### Development
+```bash
+# Run Parse Server only
+pnpm dev
+
+# Run Parse Server + Dashboard
+pnpm run start-all
+
+# Run Dashboard only
+pnpm run dashboard
+```
+
+### Production
+```bash
+pnpm start
+```
+
+## 📊 Parse Dashboard
+
+Access the web dashboard at: `http://localhost:4040`
+- Username: `admin`
+- Password: `admin123`
+
+## 🔗 API Endpoints
+
+- **Base URL**: `http://localhost:5000/parse`
+- **Health Check**: `GET /parse/health`
+- **Server Info**: `GET /parse/serverInfo`
+- **Objects**: `GET/POST/PUT/DELETE /parse/classes/{className}`
+
+### Required Headers
+```javascript
+{
+  'X-Parse-Application-Id': 'your-app-id',
+  'X-Parse-Master-Key': 'your-master-key', // For admin operations
+  'Content-Type': 'application/json'
+}
+```
+
+## 📱 Client SDK Integration
+
+```javascript
+// Initialize Parse SDK
+Parse.initialize("your-app-id");
+Parse.serverURL = "https://your-app.onrender.com/parse";
+```
+
+## 🚀 Deployment
+
+This app is configured for deployment on Render.com with automatic MongoDB Atlas connection.
+
+## 📝 Scripts
+
+- `pnpm start` - Production server
+- `pnpm dev` - Development with nodemon
+- `pnpm run dashboard` - Parse Dashboard
+- `pnpm run start-all` - Server + Dashboard
+- `pnpm test` - Test MongoDB connection
+
+## 🛡️ Security
+
+- Environment variables for sensitive data
+- Master Key protection
+- CORS enabled
+- Express security middleware
+
+## 📄 License
+
+MIT License

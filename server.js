@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { ParseServer } = require('parse-server');
+const ParseDashboard = require('parse-dashboard');
 const { readdirSync, existsSync } = require('fs');
 const mongoose = require('mongoose');
 
@@ -16,8 +17,10 @@ app.use(morgan('dev'));
 app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 
-// แสดงค่า MONGO_URI ว่าโหลดได้ไหม
-console.log('MONGO_URI:', process.env.MONGO_URI);
+// แสดงค่า MONGO_URI ว่าโหลดได้ไหม (ไม่แสดงใน production)
+if (process.env.NODE_ENV !== 'production') {
+  console.log('MONGO_URI:', process.env.MONGO_URI);
+}
 
 // ทดสอบการเชื่อมต่อ MongoDB ก่อน
 async function testMongoConnection() {
@@ -137,6 +140,40 @@ async function startServer() {
     app.use('/parse', parseServer.app);
     console.log('✅ Parse Server middleware added successfully');
     
+    // เพิ่ม Parse Dashboard (เฉพาะเมื่อ NODE_ENV ไม่ใช่ test)
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('📊 Setting up Parse Dashboard...');
+      
+      const dashboardConfig = {
+        apps: [
+          {
+            serverURL: process.env.SERVER_URL || `http://localhost:${port}/parse`,
+            appId: process.env.APP_ID || 'myAppId',
+            masterKey: process.env.MASTER_KEY || 'myMasterKey',
+            appName: process.env.NODE_ENV === 'production' ? 'TinyCare Production' : 'TinyCare Development'
+          }
+        ],
+        users: [
+          {
+            user: process.env.DASHBOARD_USER || 'admin',
+            pass: process.env.DASHBOARD_PASS || 'admin123'
+          }
+        ],
+        useEncryptedPasswords: false,
+        trustProxy: 1
+      };
+      
+      const dashboard = new ParseDashboard(dashboardConfig, {
+        allowInsecureHTTP: process.env.NODE_ENV !== 'production',
+        cookieSessionSecret: process.env.COOKIE_SECRET || 'tinycareSecretKey123',
+      });
+      
+      // Mount dashboard ที่ root path
+      app.use('/', dashboard);
+      console.log('✅ Parse Dashboard added successfully');
+      console.log(`📊 Dashboard will be available at: ${process.env.SERVER_URL ? process.env.SERVER_URL.replace('/parse', '') : `http://localhost:${port}`}`);
+    }
+    
     // เพิ่ม 404 handler กลับคืน (สำหรับ routes อื่นๆ)
     app.use('*', (req, res) => {
       res.status(404).json({ 
@@ -150,7 +187,14 @@ async function startServer() {
       console.log(`🚀 Server is Running on port ${port}`);
       console.log(`📍 Server URL: http://localhost:${port}`);
       console.log(`🔧 Parse Server URL: http://localhost:${port}/parse`);
+      console.log(`📊 Parse Dashboard URL: http://localhost:${port}`);
       console.log(`💚 Health Check: http://localhost:${port}/health`);
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.log('🌐 Production URLs:');
+        console.log(`   Parse Server: ${process.env.SERVER_URL || 'Not set'}`);
+        console.log(`   Dashboard: ${process.env.SERVER_URL ? process.env.SERVER_URL.replace('/parse', '') : 'Not set'}`);
+      }
       
       // รอให้ Parse Server พร้อมจริงๆ ก่อนทดสอบ
       setTimeout(async () => {

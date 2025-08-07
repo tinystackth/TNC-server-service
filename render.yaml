@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: tinycare-parse-server
+    env: node
+    plan: free
+    buildCommand: pnpm install
+    startCommand: pnpm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: APP_ID
+        sync: false
+      - key: MASTER_KEY
+        sync: false
+      - key: SERVER_URL
+        sync: false
+      - key: DASHBOARD_USER
+        sync: false
+      - key: DASHBOARD_PASS
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
