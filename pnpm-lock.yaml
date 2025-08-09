@@ -20,6 +20,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
+      depd:
+        specifier: ^2.0.0
+        version: 2.0.0
       dotenv:
         specifier: ^16.3.0
         version: 16.6.1
@@ -6703,7 +6706,7 @@ snapshots:
       pg-monitor: 2.0.0
       pg-promise: 11.5.4
       pluralize: 8.0.0
-      rate-limit-redis: 3.0.2(express-rate-limit@6.7.0(express@4.21.1))
+      rate-limit-redis: 3.0.2(express-rate-limit@6.7.0(express@4.21.2))
       redis: 4.6.13
       semver: 7.5.4
       subscriptions-transport-ws: 0.11.0(graphql@16.8.1)
@@ -6956,7 +6959,7 @@ snapshots:
 
   range-parser@1.2.1: {}
 
-  rate-limit-redis@3.0.2(express-rate-limit@6.7.0(express@4.21.1)):
+  rate-limit-redis@3.0.2(express-rate-limit@6.7.0(express@4.21.2)):
     dependencies:
       express-rate-limit: 6.7.0(express@4.21.1)
 
