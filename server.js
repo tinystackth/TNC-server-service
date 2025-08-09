@@ -45,38 +45,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// โหลด routes อื่น ๆ จากโฟลเดอร์ Routes (ถ้ามี)
-if (existsSync('./Routes')) {
-  try {
-    readdirSync('./Routes').forEach((r) => {
-      console.log(`Loading route: ${r}`);
-      app.use('/api', require('./Routes/' + r));
-    });
-    console.log('✅ All routes loaded successfully');
-  } catch (error) {
-    console.error('❌ Error loading routes:', error.message);
-  }
-} else {
-  console.log('⚠️  Routes directory not found, skipping route loading');
-}
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('🚨 Server Error:', err);
-  res.status(500).json({ 
-    error: 'Internal Server Error', 
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Route not found', 
-    path: req.originalUrl 
-  });
-});
-
 // ตั้งค่า port จาก .env หรือใช้ 5000 เป็นค่าเริ่มต้น
 const port = process.env.PORT || 5000;
 
@@ -132,15 +100,29 @@ async function startServer() {
       console.log('🔧 Using fallback initialization delay');
     }
     
-    // ลบ 404 handler ชั่วคราวเพื่อให้ Parse Server ทำงานได้
-    app._router.stack.pop(); // ลบ 404 handler
-    
     // เพิ่ม Parse Server middleware
     console.log('🔌 Adding Parse Server middleware to /parse...');
     app.use('/parse', parseServer.app);
     console.log('✅ Parse Server middleware added successfully');
     
-    // เพิ่ม Parse Dashboard (เฉพาะเมื่อ NODE_ENV ไม่ใช่ test)
+    // โหลด API routes หลัง Parse Server
+    console.log('🔧 Loading API routes...');
+    if (existsSync('./Routes')) {
+      try {
+        readdirSync('./Routes').forEach((r) => {
+          console.log(`Loading route: ${r}`);
+          app.use('/api', require('./Routes/' + r));
+        });
+        console.log('✅ All routes loaded successfully');
+      } catch (error) {
+        console.error('❌ Error loading routes:', error.message);
+        console.error('Full error:', error);
+      }
+    } else {
+      console.log('⚠️  Routes directory not found, skipping route loading');
+    }
+    
+    // เพิ่ม Parse Dashboard
     if (process.env.NODE_ENV !== 'test') {
       console.log('📊 Setting up Parse Dashboard...');
       
@@ -168,13 +150,22 @@ async function startServer() {
         cookieSessionSecret: process.env.COOKIE_SECRET || 'tinycareSecretKey123',
       });
       
-      // Mount dashboard ที่ root path
-      app.use('/', dashboard);
+      // Mount dashboard ที่ /dashboard path
+      app.use('/dashboard', dashboard);
       console.log('✅ Parse Dashboard added successfully');
-      console.log(`📊 Dashboard will be available at: ${process.env.SERVER_URL ? process.env.SERVER_URL.replace('/parse', '') : `http://localhost:${port}`}`);
+      console.log(`📊 Dashboard available at: http://localhost:${port}/dashboard`);
     }
     
-    // เพิ่ม 404 handler กลับคืน (สำหรับ routes อื่นๆ)
+    // Error handling middleware
+    app.use((err, req, res, next) => {
+      console.error('🚨 Server Error:', err);
+      res.status(500).json({ 
+        error: 'Internal Server Error', 
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+      });
+    });
+
+    // 404 handler (ต้องอยู่สุดท้าย)
     app.use('*', (req, res) => {
       res.status(404).json({ 
         error: 'Route not found', 
@@ -187,13 +178,14 @@ async function startServer() {
       console.log(`🚀 Server is Running on port ${port}`);
       console.log(`📍 Server URL: http://localhost:${port}`);
       console.log(`🔧 Parse Server URL: http://localhost:${port}/parse`);
-      console.log(`📊 Parse Dashboard URL: http://localhost:${port}`);
+      console.log(`📊 Parse Dashboard URL: http://localhost:${port}/dashboard`);
       console.log(`💚 Health Check: http://localhost:${port}/health`);
+      console.log(`🔗 API Base URL: http://localhost:${port}/api`);
       
       if (process.env.NODE_ENV === 'production') {
         console.log('🌐 Production URLs:');
         console.log(`   Parse Server: ${process.env.SERVER_URL || 'Not set'}`);
-        console.log(`   Dashboard: ${process.env.SERVER_URL ? process.env.SERVER_URL.replace('/parse', '') : 'Not set'}`);
+        console.log(`   Dashboard: ${process.env.SERVER_URL ? process.env.SERVER_URL.replace('/parse', '/dashboard') : 'Not set'}`);
       }
       
       // รอให้ Parse Server พร้อมจริงๆ ก่อนทดสอบ
@@ -233,7 +225,7 @@ async function waitForParseServer(port, maxAttempts = 20) {
       const response = await axios.get(`http://localhost:${port}/parse/serverInfo`, {
         headers: {
           'X-Parse-Application-Id': process.env.APP_ID || 'myAppId',
-          'X-Parse-Master-Key': process.env.MASTER_KEY || 'myMasterKey'  // เพิ่ม Master Key
+          'X-Parse-Master-Key': process.env.MASTER_KEY || 'myMasterKey'
         },
         timeout: 3000,
         validateStatus: () => true
@@ -258,6 +250,7 @@ async function waitForParseServer(port, maxAttempts = 20) {
   console.log('❌ Parse Server did not become ready within expected time');
   return false;
 }
+
 async function testParseEndpoints(port) {
   try {
     console.log('\n🧪 Testing Parse Server endpoints...');
@@ -272,57 +265,6 @@ async function testParseEndpoints(port) {
       timeout: 5000
     });
     console.log(`   Parse endpoint: ${parseResponse.status}`);
-    
-    // Test 2: Server Info
-    console.log('2️⃣ Testing Parse serverInfo...');
-    const serverInfoResponse = await axios.get(`${baseURL}/parse/serverInfo`, {
-      headers: {
-        'X-Parse-Application-Id': process.env.APP_ID || 'myAppId',
-        'X-Parse-Master-Key': process.env.MASTER_KEY || 'myMasterKey'  // เพิ่ม Master Key
-      },
-      validateStatus: () => true,
-      timeout: 5000
-    });
-    console.log(`   ServerInfo: ${serverInfoResponse.status}`);
-    
-    if (serverInfoResponse.status === 200) {
-      console.log('   ✅ ServerInfo data:', JSON.stringify(serverInfoResponse.data, null, 2));
-    } else {
-      console.log(`   ❌ ServerInfo failed:`, serverInfoResponse.data);
-    }
-    
-    // Test 3: Health endpoint (ถ้ามี)
-    console.log('3️⃣ Testing Parse health endpoint...');
-    const healthResponse = await axios.get(`${baseURL}/parse/health`, {
-      validateStatus: () => true,
-      timeout: 5000
-    });
-    console.log(`   Parse health: ${healthResponse.status}`);
-    
-    // Test 4: Create test object
-    if (serverInfoResponse.status === 200) {
-      console.log('4️⃣ Testing object creation...');
-      const createResponse = await axios.post(`${baseURL}/parse/classes/TestObject`, {
-        testField: 'Hello Parse Server',
-        timestamp: new Date().toISOString()
-      }, {
-        headers: {
-          'X-Parse-Application-Id': process.env.APP_ID || 'myAppId',
-          'X-Parse-Master-Key': process.env.MASTER_KEY || 'myMasterKey',
-          'Content-Type': 'application/json'
-        },
-        validateStatus: () => true,
-        timeout: 5000
-      });
-      
-      if (createResponse.status === 201) {
-        console.log('   ✅ Object created successfully:', createResponse.data);
-      } else {
-        console.log(`   ❌ Object creation failed: ${createResponse.status}`, createResponse.data);
-      }
-    }
-    
-    console.log('\n🎉 Parse Server endpoint testing completed!\n');
     
   } catch (error) {
     console.error('🚨 Parse endpoint testing failed:', error.message);
