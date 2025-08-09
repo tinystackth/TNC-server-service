@@ -69,6 +69,9 @@ async function startServer() {
       appId: process.env.APP_ID || 'myAppId',
       masterKey: process.env.MASTER_KEY || 'myMasterKey',
       serverURL: process.env.SERVER_URL || `http://localhost:${port}/parse`,
+
+      // เพิ่มบรรทัดนี้เพื่อ allow ทุก IP
+      masterKeyIps: ['0.0.0.0/0', '::/0'],  // ← เพิ่มบรรทัดนี้
       
       // เพิ่ม config เพื่อลด warnings
       logLevel: 'info',
