@@ -10,7 +10,21 @@ const ParseDashboard = require('parse-dashboard');
 const { readdirSync, existsSync } = require('fs');
 const mongoose = require('mongoose');
 
+// 🆕 เพิ่ม Parse SDK
+const Parse = require('parse/node');
+
 const app = express();
+
+// 🆕 Parse SDK Initialization
+Parse.initialize(
+  process.env.APP_ID || 'myAppId',
+  undefined, // JavaScript Key (ไม่ใช้)
+  process.env.MASTER_KEY || 'myMasterKey'
+);
+Parse.serverURL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}/parse`;
+
+console.log('🔧 Parse SDK initialized');
+console.log('📱 Parse Server URL:', Parse.serverURL);
 
 // ตั้งค่ามิดเดิลแวร์พื้นฐาน
 app.use(morgan('dev'));
@@ -70,6 +84,9 @@ async function startServer() {
       masterKey: process.env.MASTER_KEY || 'myMasterKey',
       serverURL: process.env.SERVER_URL || `http://localhost:${port}/parse`,
 
+      // 🆕 เพิ่ม cloud functions
+      cloud: './cloud/main.js',
+
       // เพิ่มบรรทัดนี้เพื่อ allow ทุก IP
       masterKeyIps: ['0.0.0.0/0', '::/0'],  // ← เพิ่มบรรทัดนี้
       
@@ -123,6 +140,14 @@ async function startServer() {
       }
     } else {
       console.log('⚠️  Routes directory not found, skipping route loading');
+    }
+
+    // 🆕 เพิ่ม Users API route (ถ้ามีไฟล์ users.js)
+    if (existsSync('./Routes/users.js')) {
+      console.log('🔧 Loading Users API...');
+      const usersRoutes = require('./Routes/users');
+      app.use('/api/users', usersRoutes);
+      console.log('✅ Users API loaded');
     }
     
     // เพิ่ม Parse Dashboard
